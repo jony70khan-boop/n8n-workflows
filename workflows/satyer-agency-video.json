@@ -1,0 +1,232 @@
+[
+ {
+  "id": "satyer-agency-video",
+  "name": "Satyer Agency — Video",
+  "active": false,
+  "settings": {
+   "timezone": "Asia/Dhaka",
+   "executionOrder": "v1"
+  },
+  "nodes": [
+   {
+    "parameters": {},
+    "id": "7718805c-35b7-4c74-bba4-f00f3c4daae7",
+    "name": "Manual Trigger",
+    "type": "n8n-nodes-base.manualTrigger",
+    "typeVersion": 1,
+    "position": [
+     240,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{json:{topic:\"60-second faceless Islamic explainer \\u2014 editing plan and visual direction\", kind:\"video edit plan\", audience:\"Bangla-speaking Facebook Reels + YouTube viewers\", language:'bn', notes:\"Faceless only, real motion/video \\u2014 never stills-only, never reused old pictures. No depiction of the Prophet (PBUH).\"}}];"
+    },
+    "id": "0567f78f-e052-4d5a-b354-4c90600204e8",
+    "name": "1. Topic Input",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     470,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Short-Video Editing Coach agent of Satyer Agency, a full post-production specialist (CapCut Pro for daily shorts, DaVinci Resolve free for grading). Your rules: a visual hook must appear within 3 seconds; every frame must earn its place; pacing serves the narrative, not the ego \\u2014 if a hard cut works, don't add a fancy transition; voice is king (voice -12 to -6 dB, BGM -24 to -18 dB, final -14 LUFS); subtitles burned in, readable; color grading consistent across the whole video; export vertical 1080x1920 for Reels + 1920x1080 master. Deliver an edit plan in Bangla: shot list with shot scale + camera movement per scene, transition choices, color direction, audio plan (BGM mood + SFX spots), subtitle style, export specs.\" + '\\n\\nTOPIC: ' + $json.topic + '\\nKIND: ' + $json.kind + '\\nAUDIENCE: ' + $json.audience + '\\nNOTES: ' + $json.notes }] }], generationConfig: { temperature: 0.6 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "4cdebff6-9951-4df5-bd9c-be07e0b783e5",
+    "name": "2. Gemini — Agent A",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     700,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst t=$('1. Topic Input').first().json;\nreturn [{json:{topic:t.topic, kind:t.kind, audience:t.audience, text:raw}}];"
+    },
+    "id": "af6fbe55-f805-4489-8af4-146a187fe5a4",
+    "name": "Parse A",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     930,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Visual Storyteller agent of Satyer Agency, a visual communication specialist. Every visual story must have clear narrative structure (beginning / middle / end), an emotional journey map with peaks and valleys, and cultural sensitivity. Take the edit plan from the previous step and build the visual layer: a storyboard (scene by scene: what is seen, what it means, what the viewer should feel), visual metaphors for abstract ideas, and cross-platform adaptation (9:16 Reels vs 16:9 YouTube). Ensure accessibility (readable captions, sufficient contrast) and brand consistency (Satyer Prohor gold + deep green). Output the storyboard plus one English cinematic image prompt per scene (photorealistic, with camera angle and lighting). Reply in Bangla, with image prompts in English.\" + '\\n\\nTOPIC: ' + $json.topic + '\\n\\nPREVIOUS STEP OUTPUT:\\n' + $json.text }] }], generationConfig: { temperature: 0.6 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "66234957-2563-4172-ad55-a5cd788c55df",
+    "name": "3. Gemini — Agent B",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1160,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst a=$('Parse A').first().json;\nreturn [{json:{topic:a.topic, kind:a.kind, audience:a.audience, step_a_text:a.text, text:raw}}];"
+    },
+    "id": "5b2d4ff3-022c-4564-92c9-f39579082386",
+    "name": "Parse B",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1390,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const fs=require('fs');\nconst inp=$input.first().json;\nconst rec={workflow:\"satyer-agency-video\", run_at:new Date().toISOString(), topic:inp.topic, step_a:inp.step_a_text||'', final:inp.text||''};\ntry{fs.appendFileSync('/agency/satyer-agency-video.jsonl', JSON.stringify(rec)+'\\n');}catch(e){rec.save_error=String(e);}\nreturn [{json:rec}];"
+    },
+    "id": "2f738f51-63ac-4876-bb41-5cb1f46a1c5c",
+    "name": "4. Save Output",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1620,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "content": "## Satyer Agency — Video (INACTIVE)\nAgents: (A) Short-Video Editing Coach — pacing, shot language, color, audio mix, subtitles, export (CapCut/DaVinci) [marketing/marketing-short-video-editing-coach.md]; (B) Visual Storyteller — visual narrative arcs, storyboards, emotional journey, cross-platform visuals [design/design-visual-storyteller.md].\nFlow: Topic → edit plan → storyboard + image prompts → save to /agency/satyer-agency-video.jsonl.\nKeys needed: Gemini API key ONLY (paste PASTE_GEMINI_API_KEY_HERE on Max, never in chat). Workflow INACTIVE — run manually only, nothing auto-runs. NO Facebook posting node: every post needs Jony's fresh per-post approval; drafts are saved to /agency/*.jsonl for review.",
+     "height": 220,
+     "width": 760,
+     "color": 4
+    },
+    "id": "659c0f95-896e-4e8c-8fe4-e2cbbbbf8c06",
+    "name": "Sticky — Agents & Keys",
+    "type": "n8n-nodes-base.stickyNote",
+    "typeVersion": 1,
+    "position": [
+     220,
+     20
+    ]
+   }
+  ],
+  "connections": {
+   "Manual Trigger": {
+    "main": [
+     [
+      {
+       "node": "1. Topic Input",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "1. Topic Input": {
+    "main": [
+     [
+      {
+       "node": "2. Gemini — Agent A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "2. Gemini — Agent A": {
+    "main": [
+     [
+      {
+       "node": "Parse A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse A": {
+    "main": [
+     [
+      {
+       "node": "3. Gemini — Agent B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "3. Gemini — Agent B": {
+    "main": [
+     [
+      {
+       "node": "Parse B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse B": {
+    "main": [
+     [
+      {
+       "node": "4. Save Output",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  }
+ }
+]
