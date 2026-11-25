@@ -1,0 +1,232 @@
+[
+ {
+  "id": "satyer-agency-content",
+  "name": "Satyer Agency — Content",
+  "active": false,
+  "settings": {
+   "timezone": "Asia/Dhaka",
+   "executionOrder": "v1"
+  },
+  "nodes": [
+   {
+    "parameters": {},
+    "id": "13f034c0-d154-41fc-9ed1-8c23a698d24d",
+    "name": "Manual Trigger",
+    "type": "n8n-nodes-base.manualTrigger",
+    "typeVersion": 1,
+    "position": [
+     240,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{json:{topic:\"Prophet Yunus (Jonah) and the whale \\u2014 60-second faceless explainer video\", kind:\"video script\", audience:\"Bangla-speaking Facebook/YouTube viewers, general public\", language:'bn', notes:\"Faceless channel \\u09b8\\u09a4\\u09cd\\u09af\\u09c7\\u09b0 \\u09aa\\u09cd\\u09b0\\u09b9\\u09b0; warm respectful tone; no depiction of the Prophet (PBUH).\"}}];"
+    },
+    "id": "c2492d22-947d-4cb0-a4fb-203ec865c7cb",
+    "name": "1. Topic Input",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     470,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Content Creator agent of Satyer Agency (Satyer Prohor), an expert content strategist for multi-platform campaigns. Your craft: editorial planning, brand storytelling with a clear narrative arc, simple powerful language, strong hooks, platform-specific adaptation (Facebook post, video script, Reel caption). Rules: write the content itself in Bangla (Bengali script); factual, neutral tone for news; warm, respectful, dramatic-pause-aware tone for Islamic stories; never invent facts, dates or quotes; keep a 30-60s video script to 75-110 words with a strong hook in the first sentence and an open question at the end. Reply with the finished content as plain text.\" + '\\n\\nTOPIC: ' + $json.topic + '\\nKIND: ' + $json.kind + '\\nAUDIENCE: ' + $json.audience + '\\nNOTES: ' + $json.notes }] }], generationConfig: { temperature: 0.7 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "a87f419d-3cec-4967-ad1d-e0953ffde001",
+    "name": "2. Gemini — Agent A",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     700,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst t=$('1. Topic Input').first().json;\nreturn [{json:{topic:t.topic, kind:t.kind, audience:t.audience, text:raw}}];"
+    },
+    "id": "ee562b78-ee97-4217-bb9d-66e2035b8bee",
+    "name": "Parse A",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     930,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Narratologist agent of Satyer Agency, an expert in narrative theory and story structure (Propp, Campbell, McKee, Todorov). Take the draft from the previous step and restructure it: name its controlling idea (what the story argues about human experience), map it into Setup / Confrontation / Resolution with a tension curve, check every narrative promise (Chekhov's gun) is paid off, and flag any lazy or derivative beat with a specific, framework-grounded fix. Never give generic advice \\u2014 say WHAT changes, WHY it works narratologically, and WHICH framework supports it. Output in Bangla: first a short STRUCTURAL ANALYSIS (controlling idea, structure model, act breakdown, tension peaks, narrative debts), then the revised final script/outline.\" + '\\n\\nTOPIC: ' + $json.topic + '\\n\\nPREVIOUS STEP OUTPUT:\\n' + $json.text }] }], generationConfig: { temperature: 0.7 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "a9b62fc3-a16d-4382-8424-c92bdaf471d4",
+    "name": "3. Gemini — Agent B",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1160,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst a=$('Parse A').first().json;\nreturn [{json:{topic:a.topic, kind:a.kind, audience:a.audience, step_a_text:a.text, text:raw}}];"
+    },
+    "id": "6ba94e23-e885-4789-865a-d84c0c019c3f",
+    "name": "Parse B",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1390,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const fs=require('fs');\nconst inp=$input.first().json;\nconst rec={workflow:\"satyer-agency-content\", run_at:new Date().toISOString(), topic:inp.topic, step_a:inp.step_a_text||'', final:inp.text||''};\ntry{fs.appendFileSync('/agency/satyer-agency-content.jsonl', JSON.stringify(rec)+'\\n');}catch(e){rec.save_error=String(e);}\nreturn [{json:rec}];"
+    },
+    "id": "6f16a115-6c53-48eb-a523-28f54ce46a1a",
+    "name": "4. Save Output",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1620,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "content": "## Satyer Agency — Content (INACTIVE)\nAgents: (A) Marketing Content Creator — multi-format content strategy, brand storytelling, video scripts [marketing/marketing-content-creator.md]; (B) Narratologist — story structure, Propp/Campbell/McKee, tension curves [academic/academic-narratologist.md].\nFlow: Topic → Content Creator drafts Bangla content → Narratologist restructures → save draft to /agency/satyer-agency-content.jsonl.\nKeys needed: Gemini API key ONLY (paste PASTE_GEMINI_API_KEY_HERE on Max, never in chat). Workflow INACTIVE — run manually only, nothing auto-runs. NO Facebook posting node: every post needs Jony's fresh per-post approval; drafts are saved to /agency/*.jsonl for review.",
+     "height": 220,
+     "width": 760,
+     "color": 4
+    },
+    "id": "4ab3cddd-4fe2-4325-8138-cfcbd1a348af",
+    "name": "Sticky — Agents & Keys",
+    "type": "n8n-nodes-base.stickyNote",
+    "typeVersion": 1,
+    "position": [
+     220,
+     20
+    ]
+   }
+  ],
+  "connections": {
+   "Manual Trigger": {
+    "main": [
+     [
+      {
+       "node": "1. Topic Input",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "1. Topic Input": {
+    "main": [
+     [
+      {
+       "node": "2. Gemini — Agent A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "2. Gemini — Agent A": {
+    "main": [
+     [
+      {
+       "node": "Parse A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse A": {
+    "main": [
+     [
+      {
+       "node": "3. Gemini — Agent B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "3. Gemini — Agent B": {
+    "main": [
+     [
+      {
+       "node": "Parse B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse B": {
+    "main": [
+     [
+      {
+       "node": "4. Save Output",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  }
+ }
+]
