@@ -1,0 +1,232 @@
+[
+ {
+  "id": "satyer-agency-seo",
+  "name": "Satyer Agency — SEO",
+  "active": false,
+  "settings": {
+   "timezone": "Asia/Dhaka",
+   "executionOrder": "v1"
+  },
+  "nodes": [
+   {
+    "parameters": {},
+    "id": "d68043df-a3b0-4b1d-bf0a-bf279bab6615",
+    "name": "Manual Trigger",
+    "type": "n8n-nodes-base.manualTrigger",
+    "typeVersion": 1,
+    "position": [
+     240,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{json:{topic:\"\\u09b8\\u09a4\\u09cd\\u09af\\u09c7\\u09b0 \\u09aa\\u09cd\\u09b0\\u09b9\\u09b0 / \\u09a8\\u09be\\u099c\\u09bf\\u09b0\\u09be\\u09ac\\u09be\\u099c\\u09be\\u09b0 \\u2014 Facebook Page and future agency website discoverability\", kind:\"seo audit + keyword plan\", audience:\"Bangla-speaking audience searching in Bangla and English\", language:'bn', notes:\"No website yet; Page is the main property. White-hat only.\"}}];"
+    },
+    "id": "6f7ec894-d53f-43ad-8280-4214ef8e8a7a",
+    "name": "1. Topic Input",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     470,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the SEO Specialist agent of Satyer Agency, a data-driven search strategist. Your rules: white-hat ONLY (never link schemes, cloaking, keyword stuffing); user intent first \\u2014 every optimization serves the searcher's intent; E-E-A-T in all content recommendations; no guesswork \\u2014 base keyword targeting on intent classification. Before proposing any title or keyword, run a cannibalization check: one page owns one primary keyword, never duplicate it across pages. Deliverables: a keyword strategy (pillar keyword + supporting cluster with volume/intent/priority), search-intent map (informational / commercial / transactional), and optimized Bangla titles + descriptions. Reply as structured text in Bangla where the content is Bangla.\" + '\\n\\nTOPIC: ' + $json.topic + '\\nKIND: ' + $json.kind + '\\nAUDIENCE: ' + $json.audience + '\\nNOTES: ' + $json.notes }] }], generationConfig: { temperature: 0.5 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "8ee29daa-a11e-494f-91a6-850596badb2a",
+    "name": "2. Gemini — Agent A",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     700,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst t=$('1. Topic Input').first().json;\nreturn [{json:{topic:t.topic, kind:t.kind, audience:t.audience, text:raw}}];"
+    },
+    "id": "79404f0b-051d-4dd7-bc56-933e5ae38070",
+    "name": "Parse A",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     930,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the AEO Foundations Architect agent of Satyer Agency. Your rule: audit foundations BEFORE optimizations. Check whether AI systems can discover, parse and use the content: robots.txt AI-crawler rules (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), discovery files (llms.txt, llms-full.txt), content available as clean text/Markdown within token budgets, FAQ schema. Never block AI crawlers by default. For a Facebook Page (no website yet) produce the equivalent: an AI-friendly plain-text summary of the content, an FAQ-style Q&A, and a token-budgeted version so AI engines can cite it. Deliver an AEO Foundations Scorecard (Discovery / Parsability / Capability layers, each check \\u2705/\\u274c/\\u26a0\\ufe0f) plus the llms.txt-style summary text. Reply in Bangla where the content is Bangla.\" + '\\n\\nTOPIC: ' + $json.topic + '\\n\\nPREVIOUS STEP OUTPUT:\\n' + $json.text }] }], generationConfig: { temperature: 0.5 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "5ab834a7-7818-41a0-b202-87612ef6ffb5",
+    "name": "3. Gemini — Agent B",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1160,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst a=$('Parse A').first().json;\nreturn [{json:{topic:a.topic, kind:a.kind, audience:a.audience, step_a_text:a.text, text:raw}}];"
+    },
+    "id": "b846171e-0736-4af1-a2df-f12f993c8d18",
+    "name": "Parse B",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1390,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const fs=require('fs');\nconst inp=$input.first().json;\nconst rec={workflow:\"satyer-agency-seo\", run_at:new Date().toISOString(), topic:inp.topic, step_a:inp.step_a_text||'', final:inp.text||''};\ntry{fs.appendFileSync('/agency/satyer-agency-seo.jsonl', JSON.stringify(rec)+'\\n');}catch(e){rec.save_error=String(e);}\nreturn [{json:rec}];"
+    },
+    "id": "9a421708-5832-4d95-b366-1a5d250d21dc",
+    "name": "4. Save Output",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1620,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "content": "## Satyer Agency — SEO (INACTIVE)\nAgents: (A) SEO Specialist — technical SEO, keyword clusters, intent, cannibalization rules, E-E-A-T [marketing/marketing-seo-specialist.md]; (B) AEO Foundations Architect — llms.txt, AI-crawler access, token budgets, discovery files [marketing/marketing-aeo-foundations.md].\nFlow: Topic → SEO keyword plan → AEO foundations audit → save to /agency/satyer-agency-seo.jsonl.\nKeys needed: Gemini API key ONLY (paste PASTE_GEMINI_API_KEY_HERE on Max, never in chat). Workflow INACTIVE — run manually only, nothing auto-runs. NO Facebook posting node: every post needs Jony's fresh per-post approval; drafts are saved to /agency/*.jsonl for review.",
+     "height": 220,
+     "width": 760,
+     "color": 4
+    },
+    "id": "93c67d93-0103-439b-9e25-829ce49f811e",
+    "name": "Sticky — Agents & Keys",
+    "type": "n8n-nodes-base.stickyNote",
+    "typeVersion": 1,
+    "position": [
+     220,
+     20
+    ]
+   }
+  ],
+  "connections": {
+   "Manual Trigger": {
+    "main": [
+     [
+      {
+       "node": "1. Topic Input",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "1. Topic Input": {
+    "main": [
+     [
+      {
+       "node": "2. Gemini — Agent A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "2. Gemini — Agent A": {
+    "main": [
+     [
+      {
+       "node": "Parse A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse A": {
+    "main": [
+     [
+      {
+       "node": "3. Gemini — Agent B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "3. Gemini — Agent B": {
+    "main": [
+     [
+      {
+       "node": "Parse B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse B": {
+    "main": [
+     [
+      {
+       "node": "4. Save Output",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  }
+ }
+]
