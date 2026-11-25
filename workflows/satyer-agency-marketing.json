@@ -1,0 +1,232 @@
+[
+ {
+  "id": "satyer-agency-marketing",
+  "name": "Satyer Agency — Marketing",
+  "active": false,
+  "settings": {
+   "timezone": "Asia/Dhaka",
+   "executionOrder": "v1"
+  },
+  "nodes": [
+   {
+    "parameters": {},
+    "id": "25a6b2fc-a817-40e8-8e1d-ec36162fb534",
+    "name": "Manual Trigger",
+    "type": "n8n-nodes-base.manualTrigger",
+    "typeVersion": 1,
+    "position": [
+     240,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{json:{topic:\"Grow \\u09a8\\u09be\\u099c\\u09bf\\u09b0\\u09be\\u09ac\\u09be\\u099c\\u09be\\u09b0 followers from 5 to 500 and build a Daraz deals audience\", kind:\"growth plan\", audience:\"Bangla-speaking Facebook users; Daraz shoppers in Bangladesh\", language:'bn', notes:\"Free resources only. No paid ads without Jony's fresh say-so. Daraz affiliate links are added by Jony.\"}}];"
+    },
+    "id": "3723fd78-9d3c-437c-82f7-ea25e3932c95",
+    "name": "1. Topic Input",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     470,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Growth Hacker agent of Satyer Agency, an expert growth strategist. Your craft: funnel optimization, data-driven experimentation (A/B tests with statistical discipline), viral loops and referral mechanics, channel optimization, CAC vs LTV discipline, North Star metric. Deliver a growth plan in Bangla: North Star metric, funnel stages with the biggest leak, and 3 concrete growth experiments \\u2014 each with hypothesis, channel, cost (must be \\u09f30 / free), success criterion, and what to measure. Prefer repeatable, scalable channels over one-off stunts. Never propose paid ads or anything that costs money.\" + '\\n\\nTOPIC: ' + $json.topic + '\\nKIND: ' + $json.kind + '\\nAUDIENCE: ' + $json.audience + '\\nNOTES: ' + $json.notes }] }], generationConfig: { temperature: 0.6 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "2368ff08-7d49-4dcb-9c4a-7a1eaf50cf58",
+    "name": "2. Gemini — Agent A",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     700,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst t=$('1. Topic Input').first().json;\nreturn [{json:{topic:t.topic, kind:t.kind, audience:t.audience, text:raw}}];"
+    },
+    "id": "4f70e112-40d4-445e-b9ae-408040d0d6b0",
+    "name": "Parse A",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     930,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Email Strategist agent of Satyer Agency (adapted from email marketing to audience outreach: the same segmentation + lifecycle discipline, applied to Page followers and Daraz deal subscribers \\u2014 NOT real-estate). Your rules: segmentation OVER broadcast \\u2014 every message targets a segment defined by 2+ attributes; respect the lifecycle (a new follower never gets a hard sell); clicks and conversions over opens; every sequence defines explicit EXIT conditions (converted, unsubscribed, inactive); data quality before volume; consent is infrastructure (documented, withdrawable, GDPR-aware). Deliver a sequence design in Bangla: segment definitions, a welcome + nurture + reactivation sequence with timing and CTA per message, exit conditions, and metric targets (CTR > 3%, complaint < 0.10%).\" + '\\n\\nTOPIC: ' + $json.topic + '\\n\\nPREVIOUS STEP OUTPUT:\\n' + $json.text }] }], generationConfig: { temperature: 0.6 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "9adef5fc-8aeb-4912-88e4-984f0c7b961c",
+    "name": "3. Gemini — Agent B",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1160,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst a=$('Parse A').first().json;\nreturn [{json:{topic:a.topic, kind:a.kind, audience:a.audience, step_a_text:a.text, text:raw}}];"
+    },
+    "id": "0d9fbcb3-e439-4caf-a13b-32fc1cfa74cb",
+    "name": "Parse B",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1390,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const fs=require('fs');\nconst inp=$input.first().json;\nconst rec={workflow:\"satyer-agency-marketing\", run_at:new Date().toISOString(), topic:inp.topic, step_a:inp.step_a_text||'', final:inp.text||''};\ntry{fs.appendFileSync('/agency/satyer-agency-marketing.jsonl', JSON.stringify(rec)+'\\n');}catch(e){rec.save_error=String(e);}\nreturn [{json:rec}];"
+    },
+    "id": "b05c991e-552c-4b3a-98a3-d79e0cafce76",
+    "name": "4. Save Output",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1620,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "content": "## Satyer Agency — Marketing (INACTIVE)\nAgents: (A) Growth Hacker — experiments, viral loops, funnels, CAC/LTV [marketing/marketing-growth-hacker.md]; (B) Email Strategist — segmentation, lifecycle sequences, exit conditions, deliverability (adapted from real-estate to audience/deal outreach) [marketing/marketing-email-strategist.md].\nFlow: Topic → growth plan → audience sequence → save to /agency/satyer-agency-marketing.jsonl.\nKeys needed: Gemini API key ONLY (paste PASTE_GEMINI_API_KEY_HERE on Max, never in chat). Workflow INACTIVE — run manually only, nothing auto-runs. NO Facebook posting node: every post needs Jony's fresh per-post approval; drafts are saved to /agency/*.jsonl for review.",
+     "height": 220,
+     "width": 760,
+     "color": 4
+    },
+    "id": "4de421f5-8d64-491b-821a-8b32b166c184",
+    "name": "Sticky — Agents & Keys",
+    "type": "n8n-nodes-base.stickyNote",
+    "typeVersion": 1,
+    "position": [
+     220,
+     20
+    ]
+   }
+  ],
+  "connections": {
+   "Manual Trigger": {
+    "main": [
+     [
+      {
+       "node": "1. Topic Input",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "1. Topic Input": {
+    "main": [
+     [
+      {
+       "node": "2. Gemini — Agent A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "2. Gemini — Agent A": {
+    "main": [
+     [
+      {
+       "node": "Parse A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse A": {
+    "main": [
+     [
+      {
+       "node": "3. Gemini — Agent B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "3. Gemini — Agent B": {
+    "main": [
+     [
+      {
+       "node": "Parse B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse B": {
+    "main": [
+     [
+      {
+       "node": "4. Save Output",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  }
+ }
+]
