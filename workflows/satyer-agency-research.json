@@ -1,0 +1,232 @@
+[
+ {
+  "id": "satyer-agency-research",
+  "name": "Satyer Agency — Research",
+  "active": false,
+  "settings": {
+   "timezone": "Asia/Dhaka",
+   "executionOrder": "v1"
+  },
+  "nodes": [
+   {
+    "parameters": {},
+    "id": "a3aff9df-f875-425d-8f01-fd234d750e39",
+    "name": "Manual Trigger",
+    "type": "n8n-nodes-base.manualTrigger",
+    "typeVersion": 1,
+    "position": [
+     240,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "return [{json:{topic:\"Verify the facts of today's top Bangladesh news story before posting\", kind:\"fact-check research\", audience:\"\\u09a8\\u09be\\u099c\\u09bf\\u09b0\\u09be\\u09ac\\u09be\\u099c\\u09be\\u09b0 Page readers \\u2014 accuracy is the brand\", language:'bn', notes:\"Freshness rule: only same-day news. Never invent details; say what is unknown.\"}}];"
+    },
+    "id": "0749c594-e7e6-4d3a-a3f8-4fdd0203a0c7",
+    "name": "1. Topic Input",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     470,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Research Synthesist agent of Satyer Agency, a research methodologist. Your rules: trace every claim to its PRIMARY source before repeating it (a statistic cited in ten places is still one data point if all ten trace to the same origin); grade every source's evidentiary weight explicitly (primary vs secondary vs commentary); volume of sources is not strength of evidence; report disagreement, don't launder it; state what was NOT found \\u2014 an evidence gap is itself a finding; never present confidence higher than the weakest well-used source supports; disclose search boundaries. Deliver an Evidence Synthesis Map in Bangla: Well-established / Contested / Single-study only / Evidence gap / Confidence (Low/Moderate/High with reasoning).\" + '\\n\\nTOPIC: ' + $json.topic + '\\nKIND: ' + $json.kind + '\\nAUDIENCE: ' + $json.audience + '\\nNOTES: ' + $json.notes }] }], generationConfig: { temperature: 0.4 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "22c18464-9a22-4e0a-b7fd-a347a33424ce",
+    "name": "2. Gemini — Agent A",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     700,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst t=$('1. Topic Input').first().json;\nreturn [{json:{topic:t.topic, kind:t.kind, audience:t.audience, text:raw}}];"
+    },
+    "id": "73c2ad43-fdb4-460e-a640-3004d8b2d039",
+    "name": "Parse A",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     930,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "method": "POST",
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent",
+     "sendHeaders": true,
+     "headerParameters": {
+      "parameters": [
+       {
+        "name": "x-goog-api-key",
+        "value": "PASTE_GEMINI_API_KEY_HERE"
+       },
+       {
+        "name": "Content-Type",
+        "value": "application/json"
+       }
+      ]
+     },
+     "sendBody": true,
+     "contentType": "json",
+     "specifyBody": "json",
+     "jsonBody": "={{ JSON.stringify({ contents: [{ parts: [{ text: \"You are the Historian agent of Satyer Agency, a research historian. Validate historical coherence: identify anachronisms (subtle ones too \\u2014 attitudes, social structures, economic systems), check technology/economy/social structure are consistent for the period, distinguish well-documented fact vs scholarly consensus vs active debate vs speculation, and ALWAYS name your confidence level and source type. Enrich with material culture (what people ate, wore, built, traded, believed). Challenge Eurocentrism \\u2014 proactively include non-Western histories. Challenge popular myths with evidence. Deliver a Coherence Check in Bangla: Claim / Verdict (Accurate / Partially accurate / Anachronistic / Myth) / Evidence / Confidence, plus period texture details useful for a script. Never present a myth as fact.\" + '\\n\\nTOPIC: ' + $json.topic + '\\n\\nPREVIOUS STEP OUTPUT:\\n' + $json.text }] }], generationConfig: { temperature: 0.4 } }) }}",
+     "options": {
+      "timeout": 120000
+     },
+     "onError": "continueRegularOutput"
+    },
+    "id": "119a738c-d00d-409d-8dca-7ed9dcd7edc0",
+    "name": "3. Gemini — Agent B",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2,
+    "position": [
+     1160,
+     320
+    ],
+    "disabled": false
+   },
+   {
+    "parameters": {
+     "jsCode": "let raw='';\ntry{raw=$input.first().json.candidates[0].content.parts.map(p=>p.text||'').join('');}catch(e){}\nraw=raw.replace(/```json|```/g,'').trim();\nconst a=$('Parse A').first().json;\nreturn [{json:{topic:a.topic, kind:a.kind, audience:a.audience, step_a_text:a.text, text:raw}}];"
+    },
+    "id": "7223b51a-c92c-4423-b345-a3677940b5a8",
+    "name": "Parse B",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1390,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "jsCode": "const fs=require('fs');\nconst inp=$input.first().json;\nconst rec={workflow:\"satyer-agency-research\", run_at:new Date().toISOString(), topic:inp.topic, step_a:inp.step_a_text||'', final:inp.text||''};\ntry{fs.appendFileSync('/agency/satyer-agency-research.jsonl', JSON.stringify(rec)+'\\n');}catch(e){rec.save_error=String(e);}\nreturn [{json:rec}];"
+    },
+    "id": "1c41c90d-65b3-4bc8-8dc6-dcd1137aa630",
+    "name": "4. Save Output",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2,
+    "position": [
+     1620,
+     320
+    ]
+   },
+   {
+    "parameters": {
+     "content": "## Satyer Agency — Research (INACTIVE)\nAgents: (A) Research Synthesist — systematic review, source grading, trace claims to origin, confidence levels [research/research-synthesist.md]; (B) Historian — period authenticity, anachronism flags, material culture, myth-busting [academic/academic-historian.md].\nFlow: Topic → evidence synthesis → historical coherence check → save to /agency/satyer-agency-research.jsonl.\nKeys needed: Gemini API key ONLY (paste PASTE_GEMINI_API_KEY_HERE on Max, never in chat). Workflow INACTIVE — run manually only, nothing auto-runs. NO Facebook posting node: every post needs Jony's fresh per-post approval; drafts are saved to /agency/*.jsonl for review.",
+     "height": 220,
+     "width": 760,
+     "color": 4
+    },
+    "id": "2c4ff28e-870d-4aba-8e68-3643384809fe",
+    "name": "Sticky — Agents & Keys",
+    "type": "n8n-nodes-base.stickyNote",
+    "typeVersion": 1,
+    "position": [
+     220,
+     20
+    ]
+   }
+  ],
+  "connections": {
+   "Manual Trigger": {
+    "main": [
+     [
+      {
+       "node": "1. Topic Input",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "1. Topic Input": {
+    "main": [
+     [
+      {
+       "node": "2. Gemini — Agent A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "2. Gemini — Agent A": {
+    "main": [
+     [
+      {
+       "node": "Parse A",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse A": {
+    "main": [
+     [
+      {
+       "node": "3. Gemini — Agent B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "3. Gemini — Agent B": {
+    "main": [
+     [
+      {
+       "node": "Parse B",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   },
+   "Parse B": {
+    "main": [
+     [
+      {
+       "node": "4. Save Output",
+       "type": "main",
+       "index": 0
+      }
+     ]
+    ]
+   }
+  }
+ }
+]
